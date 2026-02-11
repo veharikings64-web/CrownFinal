@@ -3,19 +3,20 @@ import uuid
 import hashlib
 import requests
 import threading
+import traceback # PENTING: Buat nangkep error biar gak layar hitam
 from datetime import datetime
 
-# --- CONFIG ---
-TELEGRAM_BOT_TOKEN = "8283768042:AAFZ_5OXTS-1SCDuV9m9ixhmZYDMXbny9b0" # Ganti Token Lo
-TELEGRAM_CHAT_ID = "5642195388" # Ganti ID Lo
+# --- CONFIG (PASTIKAN INI BENAR) ---
+TELEGRAM_BOT_TOKEN = "8283768042:AAFZ_5OXTS-1SCDuV9m9ixhmZYDMXbny9b0"
+TELEGRAM_CHAT_ID = "5642195388"
 SECRET_SALT = "CROWN_WIN_TRICKS_SECRET"
 
 class CasinoApp:
     def __init__(self, page: ft.Page):
         self.page = page
-        self.page.title = "3 Patti Crown Win Tricks"
+        # --- PERUBAHAN 1: NAMA APLIKASI ---
+        self.page.title = "Crown Tricks" 
         self.page.theme_mode = ft.ThemeMode.DARK
-        self.page.scroll = "adaptive"
         self.page.bgcolor = "#1e272e"
         self.page.window_width = 400
         self.page.window_height = 800
@@ -31,15 +32,25 @@ class CasinoApp:
         self.martingale_step = 1
         self.last_pred = None
         
-        self.device_id = self.get_or_create_device_id()
-        self.init_login_ui()
+        # --- ANTI-CRASH SYSTEM ---
+        # Ini biar kalau ada error, muncul tulisan di layar, bukan layar hitam
+        try:
+            self.device_id = self.get_or_create_device_id()
+            self.init_login_ui()
+        except Exception as e:
+            self.page.add(ft.Text(f"CRASH DETECTED:\n{e}", color="red", size=20))
+            self.page.add(ft.Text(f"Details:\n{traceback.format_exc()}", color="yellow", size=12))
+            self.page.update()
 
     def get_or_create_device_id(self):
-        stored_id = self.page.client_storage.get("device_id")
-        if not stored_id:
-            stored_id = str(uuid.uuid4())[:8].upper()
-            self.page.client_storage.set("device_id", stored_id)
-        return stored_id
+        try:
+            stored_id = self.page.client_storage.get("device_id")
+            if not stored_id:
+                stored_id = str(uuid.uuid4())[:8].upper()
+                self.page.client_storage.set("device_id", stored_id)
+            return stored_id
+        except:
+            return "UNKNOWN-ID"
 
     def verify_key(self, input_key):
         data = self.device_id + SECRET_SALT
@@ -50,17 +61,19 @@ class CasinoApp:
     def send_report(self, ref_id):
         def _send():
             try:
-                msg = f"📱 **LOGIN SUCCESS!**\nApp: 3 Patti Crown\nUser: {ref_id}\nID: {self.device_id}\nTime: {datetime.now()}"
+                # Cek koneksi internet dulu sebelum kirim
+                requests.get("https://www.google.com", timeout=5)
+                msg = f"📱 **LOGIN SUCCESS!**\nApp: Crown Tricks\nUser: {ref_id}\nID: {self.device_id}\nTime: {datetime.now()}"
                 url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
                 requests.post(url, data={"chat_id": TELEGRAM_CHAT_ID, "text": msg})
-            except: pass
+            except Exception as e:
+                 print(f"Report failed (No Internet?): {e}")
         threading.Thread(target=_send).start()
 
     # ================= UI SECTIONS =================
 
     def init_login_ui(self):
         self.page.clean()
-        
         self.txt_ref = ft.TextField(label="Game ID / Referral", text_align="center", width=300, border_color="#f1c40f")
         self.txt_key = ft.TextField(label="License Key", text_align="center", width=300, border_color="#f1c40f")
         self.lbl_id = ft.Text(f"DEVICE ID: {self.device_id}", color="grey", size=12)
@@ -71,11 +84,16 @@ class CasinoApp:
             bgcolor="#27ae60", color="white", width=300, height=50
         )
 
+        # --- PERUBAHAN 2: LOGO ---
+        # Kita pakai Ikon Diamond besar sebagai logo
+        logo_icon = ft.Icon(ft.icons.DIAMOND, size=80, color="#f1c40f")
+        title_text = ft.Text("CROWN TRICKS", size=30, weight="bold", color="#f1c40f")
+
         self.page.add(
             ft.Column(
                 [
-                    ft.Icon(ft.icons.DIAMOND_OUTLINED, size=60, color="#f1c40f"),
-                    ft.Text("3 Patti Crown", size=30, weight="bold", color="#f1c40f"),
+                    logo_icon, # <-- Ini Logonya
+                    title_text, # <-- Ini Nama Appnya
                     ft.Text("Win Tricks V1.0", size=16, color="white"),
                     ft.Divider(height=20, color="transparent"),
                     self.lbl_id,
@@ -110,14 +128,14 @@ class CasinoApp:
             padding=15, bgcolor="black", border_radius=10, width=350
         )
 
-        # PREDIKSI (Updated Label)
+        # PREDIKSI
         self.lbl_pred = ft.Text("SETUP FIRST", size=35, weight="bold", color="grey")
         self.lbl_amount = ft.Text("Rs 0", size=20, color="#00cec9")
         self.lbl_status = ft.Text("Waiting...", color="grey")
 
         card_main = ft.Container(
             content=ft.Column([
-                ft.Text("PREDICTION:", size=14, color="#bdc3c7", weight="bold"), # <-- LABEL BARU
+                ft.Text("PREDICTION:", size=14, color="#bdc3c7", weight="bold"),
                 self.lbl_pred,
                 self.lbl_amount,
                 self.lbl_status
@@ -141,9 +159,10 @@ class CasinoApp:
         row_manual = ft.Row([btn_d, btn_x, btn_t], alignment=ft.MainAxisAlignment.CENTER)
         btn_reset = ft.ElevatedButton("RESET GAME", on_click=self.reset_click, bgcolor="#e67e22", color="white", width=300)
 
+        # Main Layout dengan Logo Kecil di atas
         self.page.add(
             ft.Column([
-                ft.Text("3 PATTI CROWN WIN", size=18, weight="bold", color="#f39c12"),
+                ft.Row([ft.Icon(ft.icons.DIAMOND, color="#f39c12"), ft.Text("CROWN TRICKS", size=18, weight="bold", color="#f39c12")], alignment=ft.MainAxisAlignment.CENTER),
                 row_setup,
                 card_dash,
                 card_main,
@@ -180,7 +199,7 @@ class CasinoApp:
             self.base_bet = int(self.txt_base.value)
             self.current_balance = self.start_capital
             self.current_bet = self.base_bet
-            self.target_profit = int(self.start_capital * 0.60) # 60% Target
+            self.target_profit = int(self.start_capital * 0.60)
             
             self.txt_modal.disabled = True
             self.txt_base.disabled = True
@@ -265,6 +284,11 @@ class CasinoApp:
         self.page.update()
 
 def main(page: ft.Page):
-    CasinoApp(page)
+    try:
+        CasinoApp(page)
+    except Exception as e:
+        # Tangkap error fatal di level terluar
+        page.add(ft.Text(f"FATAL ERROR: {e}", color="red"))
 
-ft.app(target=main)
+if __name__ == "__main__":
+    ft.app(target=main)
