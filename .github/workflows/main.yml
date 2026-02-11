@@ -17,15 +17,13 @@ jobs:
         run: |
           pip install flet requests
 
-      # Kita apus setup flutter manual biar Flet yang urus sendiri
-      # Robot bakal otomatis download versi yang dia mau
-
+      # Build dengan izin internet dan auto-yes
       - name: Build Android APK
         run: |
-          yes | flet build apk --verbose
+          yes | flet build apk --android-permissions android.permission.INTERNET --verbose
 
       - name: Upload APK Result
         uses: actions/upload-artifact@v4
         with:
-          name: CrownWinTricks-APK
+          name: CrownTricks-APK
           path: build/apk/app-release.apk
