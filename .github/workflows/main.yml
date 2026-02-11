@@ -17,17 +17,15 @@ jobs:
         run: |
           pip install flet requests
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.19.0'
+      # Kita apus setup flutter manual biar Flet yang urus sendiri
+      # Robot bakal otomatis download versi yang dia mau
 
       - name: Build Android APK
         run: |
-          flet build apk --verbose
+          yes | flet build apk --verbose
 
       - name: Upload APK Result
         uses: actions/upload-artifact@v4
         with:
-          name: CrownWin-APK
+          name: CrownWinTricks-APK
           path: build/apk/app-release.apk
