@@ -17,10 +17,10 @@ jobs:
         run: |
           pip install flet requests
 
-      # Build dengan izin internet dan auto-yes
+      # Perbaikan: Hapus "--android-permissions" karena itu otomatis default
       - name: Build Android APK
         run: |
-          yes | flet build apk --android-permissions android.permission.INTERNET --verbose
+          yes | flet build apk --verbose
 
       - name: Upload APK Result
         uses: actions/upload-artifact@v4
