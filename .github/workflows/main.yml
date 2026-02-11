@@ -29,5 +29,5 @@ jobs:
       - name: Upload APK Result
         uses: actions/upload-artifact@v4
         with:
-          name: CrownWinTricks-APK
+          name: CrownWin-APK
           path: build/apk/app-release.apk
